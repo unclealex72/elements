@@ -1,6 +1,6 @@
 package elements
 
-import java.io.{File, FileWriter}
+import java.io.{File, FileWriter, PrintWriter}
 
 import scala.io.Source
 
@@ -139,41 +139,34 @@ object Elements extends App {
     el -> word
   }
 
+  val elements: Seq[String] = elementWords.map(_._1).distinct.sorted
+  val wordsByElement = elementWords.groupBy(_._1).mapValues(_.map(_._2))
 
-  val rows: Seq[Seq[String]] = elementWords.foldLeft((None.asInstanceOf[Option[String]], Seq.empty[Seq[String]])) { case (previousElementAndRows, (element, word)) =>
-    val maybePreviousElement = previousElementAndRows._1
-    val previousRows = previousElementAndRows._2
-    def list(f: wordsBuilder.Word => Seq[String]): String = f(word).mkString(", ")
-    val elementCell = if (maybePreviousElement.contains(element)) "" else element
-    (Some(element), previousRows :+ Seq(elementCell, list(_.map(_._1)), list(_.map(_._2))))
-  }._2
-
-  val widths: Seq[Int] = rows.foldLeft(Seq.empty[Int]) { case (widths, thisRow) =>
-    if (widths.isEmpty) {
-      thisRow.map(_.length)
-    }
-    else {
-      thisRow.zip(widths).map { case (cell, width) => Math.max(cell.length, width)}
-    }
-  }
-
-  def printRow(row: Seq[String], padding: Char): String = {
-    val cells = row.zip(widths).map { case (cell, width) =>
-      cell.padTo(width, padding)
-    }
-    cells.mkString("|", "|", "|")
+  val rows = elements.map { element =>
+    val words: Seq[wordsBuilder.Word] = wordsByElement.get(element).toSeq.flatten
+    Seq(element, words.map(_.map(_._1).mkString(", ")).mkString("<br/>"), words.map(_.map(_._2).mkString(", ")).mkString("<br/>"))
   }
 
   val readmeFile = new File("README.md")
-  val preamble = Source.fromFile(readmeFile).getLines().takeWhile(!_.startsWith("|"))
+  val preamble = Source.fromFile(readmeFile).getLines().takeWhile(!_.startsWith("###")).mkString("\n")
 
-  val newContent =
-    preamble.toSeq ++
-      Seq(printRow(Seq("Element", "Symbols", "Elements"), ' '),
-          printRow(Seq(":", ":", ":"), '-')) ++
-    rows.map(printRow(_, ' '))
+  val writer = new PrintWriter(new FileWriter(readmeFile))
+  //val writer = new PrintWriter(System.out)
 
-  val writer = new FileWriter(readmeFile)
-  writer.append(newContent.mkString("\n"))
+  writer.println(preamble)
+
+  elements.foreach { element =>
+    writer.println(s"### $element")
+    writer.println()
+    writer.println("|Symbols|Elements|")
+    writer.println("|:------|:-------|")
+    wordsByElement(element).foreach { word =>
+      val symbols = word.map(w => w._1).mkString(", ")
+      val elements = word.map(w => w._2).mkString(", ")
+      writer.println(Seq(symbols, elements).mkString("|", "|", "|"))
+    }
+    writer.println()
+  }
+
   writer.close()
 }
