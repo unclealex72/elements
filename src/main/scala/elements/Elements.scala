@@ -1,5 +1,9 @@
 package elements
 
+import java.io.{File, FileWriter}
+
+import scala.io.Source
+
 /**
   * Created by alex on 28/01/17
   **/
@@ -128,15 +132,48 @@ object Elements extends App {
 
   val wordsBuilder: WordsBuilder = new WordsBuilder(allElements)
 
-  val elementWords = for {
+  val elementWords: Seq[(String, wordsBuilder.Word)] = for {
     el <- allElements.values.toSeq.sorted
     word <- wordsBuilder.lookup(el)
   } yield {
     el -> word
   }
-  elementWords.foreach { case(el, word) =>
-    val symbols = word.map(_._1).mkString(", ")
-    val els = word.map(_._2).mkString(", ")
-    println(s"$el: $symbols ($els)")
+
+
+  val rows: Seq[Seq[String]] = elementWords.foldLeft((None.asInstanceOf[Option[String]], Seq.empty[Seq[String]])) { case (previousElementAndRows, (element, word)) =>
+    val maybePreviousElement = previousElementAndRows._1
+    val previousRows = previousElementAndRows._2
+    def list(f: wordsBuilder.Word => Seq[String]): String = f(word).mkString(", ")
+    val elementCell = if (maybePreviousElement.contains(element)) "" else element
+    (Some(element), previousRows :+ Seq(elementCell, list(_.map(_._1)), list(_.map(_._2))))
+  }._2
+
+  val widths: Seq[Int] = rows.foldLeft(Seq.empty[Int]) { case (widths, thisRow) =>
+    if (widths.isEmpty) {
+      thisRow.map(_.length)
+    }
+    else {
+      thisRow.zip(widths).map { case (cell, width) => Math.max(cell.length, width)}
+    }
   }
+
+  def printRow(row: Seq[String], padding: Char): String = {
+    val cells = row.zip(widths).map { case (cell, width) =>
+      cell.padTo(width, padding)
+    }
+    cells.mkString("|", "|", "|")
+  }
+
+  val readmeFile = new File("README.md")
+  val preamble = Source.fromFile(readmeFile).getLines().takeWhile(!_.startsWith("|"))
+
+  val newContent =
+    preamble.toSeq ++
+      Seq(printRow(Seq("Element", "Symbols", "Elements"), ' '),
+          printRow(Seq(":", ":", ":"), '-')) ++
+    rows.map(printRow(_, ' '))
+
+  val writer = new FileWriter(readmeFile)
+  writer.append(newContent.mkString("\n"))
+  writer.close()
 }
