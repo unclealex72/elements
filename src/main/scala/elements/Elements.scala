@@ -1,45 +1,8 @@
 package elements
 
-
 /**
-  * Created by alex on 26/01/17
+  * Created by alex on 28/01/17
   **/
-class Elements(elementsBySymbol: Map[String, String]) {
-
-  type Symbol = String
-  type Element = String
-  type Word = Seq[(Symbol, Element)]
-
-  val symbols: Seq[Symbol] = elementsBySymbol.keys.toSeq
-
-  def lookup(word: String): Seq[Word] = {
-    def _lookup(partialWord: String, currentSymbols: Seq[Symbol] = Seq.empty, currentWords: Seq[Word] = Seq.empty): Seq[Word] = {
-      if (partialWord.isEmpty) {
-        val newWord: Word = for {
-          symbol <- currentSymbols
-          element <- elementsBySymbol.get(symbol)
-        } yield {
-          (symbol, element)
-        }
-        currentWords :+ newWord
-      }
-      else {
-        symbols.foldLeft(currentWords) { (words, symbol) =>
-          if (partialWord.toLowerCase.startsWith(symbol.toLowerCase)) {
-            val remainingWord = partialWord.substring(symbol.length)
-            val newSymbols: Seq[Symbol] = currentSymbols :+ symbol
-            words ++ _lookup(remainingWord, newSymbols, currentWords)
-          }
-          else {
-            words
-          }
-        }
-      }
-    }
-    _lookup(word)
-  }
-}
-
 object Elements extends App {
 
   val allElements: Map[String, String] = Seq(
@@ -163,11 +126,11 @@ object Elements extends App {
     "Og" -> "Oganesson"
   ).toMap
 
-  val elements: Elements = new Elements(allElements)
+  val wordsBuilder: WordsBuilder = new WordsBuilder(allElements)
 
   val elementWords = for {
     el <- allElements.values.toSeq.sorted
-    word <- elements.lookup(el)
+    word <- wordsBuilder.lookup(el)
   } yield {
     el -> word
   }

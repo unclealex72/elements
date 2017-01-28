@@ -9,7 +9,7 @@ import scala.collection.immutable.IndexedSeq
 /**
   * Created by alex on 26/01/17
   **/
-class ElementsSpec extends Specification {
+class WordsBuilderSpec extends Specification {
 
   val A: (String, String) = "a" -> "A"
   val AL: (String, String) = "al" -> "AL"
@@ -19,29 +19,29 @@ class ElementsSpec extends Specification {
   val EX: (String, String) = "ex" -> "EX"
 
   val elementsBySymbol: Map[String, String] = Seq(A, AL, L, LE, E, EX).toMap
-  val elements: Elements = new Elements(elementsBySymbol)
+  val wordsBuilder: WordsBuilder = new WordsBuilder(elementsBySymbol)
 
   "alex" should {
     "be constructable in two ways" in {
-      elements.lookup("alex") must containTheSameElementsAs(Seq(Seq(AL, EX), Seq(A, L, EX)))
+      wordsBuilder.lookup("alex") must containTheSameElementsAs(Seq(Seq(AL, EX), Seq(A, L, EX)))
     }
   }
 
   "lex" should {
     "be constructable in one way" in {
-      elements.lookup("lex") must containTheSameElementsAs(Seq(Seq(L, EX)))
+      wordsBuilder.lookup("lex") must containTheSameElementsAs(Seq(Seq(L, EX)))
     }
   }
 
   "alx" should {
     "not be constructable" in {
-      elements.lookup("alx") must beEmpty
+      wordsBuilder.lookup("alx") must beEmpty
     }
   }
 
   "alle" should {
     "be constructable in four ways" in {
-      elements.lookup("alle") must containTheSameElementsAs(Seq(
+      wordsBuilder.lookup("alle") must containTheSameElementsAs(Seq(
         Seq(A, L, L, E),
         Seq(AL, LE),
         Seq(AL, L, E),
